@@ -19,7 +19,11 @@
 *
 ********************************************************************************************/
 
+#include <stdlib.h>
 #include "raylib.h"
+
+#define PHYSAC_IMPLEMENTATION
+#include "physac.h"
 
 enum GAME_MODE {
     SP = 0,
@@ -47,6 +51,8 @@ int main()
     const int screenHeight = 450;
 
     InitWindow(screenWidth, screenHeight, "networked ping with ai");
+
+    InitPhysics();
 
     Camera camera = { 0 };
     camera.position = (Vector3){ 0.0f, 10.0f, 0.0f };
@@ -87,7 +93,13 @@ int main()
     bool bBallLaunched = false;
     float ballX = 0.f;
     float ballY = 0.f;
-    Vector2 ballDirection = { 1, 0 };
+    Vector2 ballRectPos = { 0, 0 };
+
+    PhysicsBody ball = CreatePhysicsBodyRectangle((Vector2) {ballX, ballY}, ballSize, ballSize, 10);
+    ball->useGravity = false;
+    ball->enabled = true;
+    ball->restitution = 0;
+    ball->inertia = 0;
 
     // string that prints mouse coordinates on screen
     char *mousePosStr = (char*)malloc(100 * sizeof(char));
@@ -104,6 +116,8 @@ int main()
         UpdateCamera(&camera);
         //----------------------------------------------------------------------------------
 
+        UpdatePhysics();
+
         mousePoint = GetMousePosition();
 
         Color spButtonColor = GRAY;
@@ -111,6 +125,8 @@ int main()
         Color exitButtonColor = GRAY;
         Color gameExitButtonColor = GRAY;
         Color gameReturnButtonColor = GRAY;
+
+        ballRectPos = ball->position;
 
         sprintf(mousePosStr,"Mouse position: %fpx %fpx", mousePoint.x, mousePoint.y);      
         sprintf(menuModeStr, "Menu Mode: %s", menuModeNames[menuMode]);
@@ -121,6 +137,7 @@ int main()
         Rectangle gameMenuContainer = { (GetScreenWidth() / 2.f) - (gameMenuWidth / 2.f), (GetScreenHeight() / 2.0f) - (gameMenuHeight / 2.f), gameMenuWidth, gameMenuHeight };
         Rectangle gameReturnButton = { (GetScreenWidth() / 2.f) - (buttonWidth / 2.f), (GetScreenHeight() / 2.f) - gameReturnY, buttonWidth, buttonHeight };
         Rectangle gameExitButton = { (GetScreenWidth() / 2.f) - (buttonWidth / 2.f), (GetScreenHeight() / 2.f) - gameExitY, buttonWidth, buttonHeight };
+        Rectangle ballRect = { ballRectPos.x, ballRectPos.y, ballSize, ballSize };
 
         Rectangle player1 = { +20.f, player1Y, playerWidth, playerHeight };
         Rectangle player2 = { GetScreenWidth() - 40.f, player2Y, playerWidth, playerHeight };
@@ -129,9 +146,9 @@ int main()
         {
             ballX = player1.x + player1.width;
             ballY = player1Y + playerHeight/2.f - ballSize/2.f;
+            ball->position.x = ballX;
+            ball->position.y = ballY;
         }
-
-        Rectangle ball = { ballX, ballY, ballSize, ballSize };
 
         if (menuMode == MainMenu)
         {
@@ -190,10 +207,10 @@ int main()
 
             if (menuMode == MainMenu) 
             {
+                // Menu buttons
                 DrawRectangleRounded(spButton, buttonRoundness, 0, spButtonColor);
                 DrawRectangleRounded(mpButton, buttonRoundness, 0, mpButtonColor);
                 DrawRectangleRounded(exitButton, buttonRoundness, 0, exitButtonColor);
-
 
                 DrawText("Singleplayer", (GetScreenWidth() / 2) - 90, (GetScreenHeight() / 2) - spY + (buttonHeight/2) - 15, 30, BLACK);
                 DrawText("Multiplayer", (GetScreenWidth() / 2) - 80, (GetScreenHeight() / 2) - mpY + (buttonHeight/2) - 15, 30, BLACK);
@@ -207,9 +224,10 @@ int main()
                 DrawText("P1 Score: ", 10, 10, 20, DARKGRAY);
                 DrawText("P2 Score: ", 600, 10, 20, DARKGRAY);
 
+                // Draw player rackets and the ball
                 DrawRectangleRounded(player1, 0.f, 0, GREEN);
                 DrawRectangleRounded(player2, 0.f, 0, RED);
-                DrawRectangleRounded(ball, 0.f, 0, BLACK);
+                DrawRectangleRounded(ballRect, 0.f, 0, RED);
 
                 // Player 1 movement
                 if (IsKeyDown(KEY_W) && player1Y >= 5.f)
@@ -221,11 +239,25 @@ int main()
                     player1Y += playerSpeed;
                 }
 
-                if (IsKeyDown(KEY_SPACE))
+                float p1YMultiplier = (ball->position.y <= player1Y + playerHeight/2) ?
+                    (player1Y + playerHeight/2) - ball->position.y : ball->position.y - (player1Y + playerHeight/2);
+                
+                if (IsKeyPressed(KEY_SPACE) && !bBallLaunched)
                 {
                     bBallLaunched = true;
 
-                    
+                    PhysicsAddForce(ball, (Vector2) { 1000, p1YMultiplier * 10 });
+                }
+
+                if (CheckCollisionRecs(ballRect, player2))
+                {
+                    ball->velocity = (Vector2) { 0, 0 };
+                    PhysicsAddForce(ball, (Vector2) { -1000, 0 });
+                }
+                else if (CheckCollisionRecs(ballRect, player1))
+                {
+                    ball->velocity = (Vector2) { 0, 0 };
+                    PhysicsAddForce(ball, (Vector2) { 1000, p1YMultiplier * 10 });
                 }
 
                 // Player 2 movement
@@ -270,6 +302,10 @@ int main()
         EndDrawing();
         //----------------------------------------------------------------------------------
     }
+
+    DestroyPhysicsBody(ball);
+
+    ClosePhysics();
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
