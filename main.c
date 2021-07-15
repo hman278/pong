@@ -21,11 +21,23 @@
 
 #include "raylib.h"
 
+enum GAME_MODE {
+    SP = 0,
+    MP = 1
+} gameMode;
+
 enum MENU_MODE {
     MainMenu = 0,
     MenuNone = 1,
     GameMenu = 2
 } menuMode;
+
+static const char* const menuModeNames[3] =
+{
+    "Main Menu",
+    "None",
+    "Game Menu"
+};
 
 int main() 
 {   
@@ -49,6 +61,8 @@ int main()
     float mpY = 50.f;
     float exitY = -100.f; 
     float gameMenuY = 0.f;
+    float gameReturnY = 115.f;
+    float gameExitY = -5.;
 
     float buttonRoundness = 0.2f; 
     float buttonWidth = 300.f;
@@ -56,12 +70,28 @@ int main()
 
     float gameMenuRoundness = 0.1f;
     float gameMenuWidth = 500.f;
-    float gameMenuHeight = 200.f;
+    float gameMenuHeight = 300.f;
+
+    float ballSize = 20.f;
+
+    float playerWidth = 20.f;
+    float playerHeight = 100.f;
+
+    float playerSpeed = 5.f;
 
     Vector2 mousePoint = { 0.0f, 0.0f };
 
+    float player1Y = (GetScreenHeight() / 2.f) - (playerHeight / 2.f);
+    float player2Y = (GetScreenHeight() / 2.f) - (playerHeight / 2.f);
+
+    bool bBallLaunched = false;
+    float ballX = 0.f;
+    float ballY = 0.f;
+    Vector2 ballDirection = { 1, 0 };
+
     // string that prints mouse coordinates on screen
     char *mousePosStr = (char*)malloc(100 * sizeof(char));
+    char *menuModeStr = (char*)malloc(25 * sizeof(char));
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
@@ -79,33 +109,76 @@ int main()
         Color spButtonColor = GRAY;
         Color mpButtonColor = GRAY;
         Color exitButtonColor = GRAY;
+        Color gameExitButtonColor = GRAY;
+        Color gameReturnButtonColor = GRAY;
 
-        sprintf(mousePosStr,"Mouse position: %fpx %fpx", mousePoint.x, mousePoint.y);
+        sprintf(mousePosStr,"Mouse position: %fpx %fpx", mousePoint.x, mousePoint.y);      
+        sprintf(menuModeStr, "Menu Mode: %s", menuModeNames[menuMode]);
 
         Rectangle spButton = { (GetScreenWidth() / 2.f) - (buttonWidth / 2.f), (GetScreenHeight() / 2.f) - spY, buttonWidth, buttonHeight };
         Rectangle mpButton = { (GetScreenWidth() / 2.f) - (buttonWidth / 2.f), (GetScreenHeight() / 2.f) - mpY, buttonWidth, buttonHeight };
         Rectangle exitButton = { (GetScreenWidth() / 2.f) - (buttonWidth / 2.f), (GetScreenHeight() / 2.f) - exitY, buttonWidth, buttonHeight };
-        Rectangle gameMenuContainer = { (GetScreenWidth() / 2.f) - (gameMenuWidth / 2.f), (GetScreenHeight() / 2.0f) - gameMenuY, gameMenuWidth, gameMenuHeight };
+        Rectangle gameMenuContainer = { (GetScreenWidth() / 2.f) - (gameMenuWidth / 2.f), (GetScreenHeight() / 2.0f) - (gameMenuHeight / 2.f), gameMenuWidth, gameMenuHeight };
+        Rectangle gameReturnButton = { (GetScreenWidth() / 2.f) - (buttonWidth / 2.f), (GetScreenHeight() / 2.f) - gameReturnY, buttonWidth, buttonHeight };
+        Rectangle gameExitButton = { (GetScreenWidth() / 2.f) - (buttonWidth / 2.f), (GetScreenHeight() / 2.f) - gameExitY, buttonWidth, buttonHeight };
+
+        Rectangle player1 = { +20.f, player1Y, playerWidth, playerHeight };
+        Rectangle player2 = { GetScreenWidth() - 40.f, player2Y, playerWidth, playerHeight };
+        
+        if (!bBallLaunched)
+        {
+            ballX = player1.x + player1.width;
+            ballY = player1Y + playerHeight/2.f - ballSize/2.f;
+        }
+
+        Rectangle ball = { ballX, ballY, ballSize, ballSize };
 
         if (menuMode == MainMenu)
         {
             if (CheckCollisionPointRec(mousePoint, spButton))
             {
-                spButtonColor = YELLOW;
+                spButtonColor = YELLOW; 
 
-                if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) menuMode = MenuNone;
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                {
+                    menuMode = MenuNone; 
+                    gameMode = SP;
+                } 
             }
             else if  (CheckCollisionPointRec(mousePoint, mpButton))
             {
                 mpButtonColor = YELLOW;
 
-                if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) menuMode = MenuNone;
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+                {
+                    menuMode = MenuNone; 
+                    gameMode = MP;
+                } 
             }
             else if  (CheckCollisionPointRec(mousePoint, exitButton))
             {
                 exitButtonColor = YELLOW;
 
-                if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) menuMode = MenuNone;
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) 
+                {
+                    menuMode = MenuNone;
+                    CloseWindow();
+                }
+            }
+        }
+        else if (menuMode == GameMenu)
+        {
+            if (CheckCollisionPointRec(mousePoint, gameReturnButton))
+            {
+                gameReturnButtonColor = YELLOW;
+
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) menuMode = MenuNone;
+            }
+            else if  (CheckCollisionPointRec(mousePoint, gameExitButton))
+            {
+                gameExitButtonColor = YELLOW;
+
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) menuMode = MainMenu;
             }
         }
 
@@ -113,7 +186,7 @@ int main()
         //----------------------------------------------------------------------------------
         BeginDrawing();
 
-            ClearBackground(RAYWHITE); 
+            ClearBackground(RAYWHITE);
 
             if (menuMode == MainMenu) 
             {
@@ -134,9 +207,52 @@ int main()
                 DrawText("P1 Score: ", 10, 10, 20, DARKGRAY);
                 DrawText("P2 Score: ", 600, 10, 20, DARKGRAY);
 
+                DrawRectangleRounded(player1, 0.f, 0, GREEN);
+                DrawRectangleRounded(player2, 0.f, 0, RED);
+                DrawRectangleRounded(ball, 0.f, 0, BLACK);
+
+                // Player 1 movement
+                if (IsKeyDown(KEY_W) && player1Y >= 5.f)
+                {
+                    player1Y -= playerSpeed;
+                }
+                else if (IsKeyDown(KEY_S) && player1Y <= GetScreenHeight() - playerHeight)
+                {
+                    player1Y += playerSpeed;
+                }
+
+                if (IsKeyDown(KEY_SPACE))
+                {
+                    bBallLaunched = true;
+
+                    
+                }
+
+                // Player 2 movement
+                if (gameMode == MP)
+                {
+                    if (IsKeyDown(KEY_UP) && player2Y >= 5.f)
+                    {
+                        player2Y -= playerSpeed;
+                    }
+                    else if (IsKeyDown(KEY_DOWN) && player2Y <= GetScreenHeight() - playerHeight)
+                    {
+                        player2Y += playerSpeed;
+                    }
+                }
+                else // SP 
+                {
+
+                }
+
                 if (menuMode == GameMenu)
                 {
                     DrawRectangleRounded(gameMenuContainer, gameMenuRoundness, 0,  Fade(GRAY, 0.4f));
+                    DrawRectangleRounded(gameReturnButton, gameMenuRoundness, 0,  gameReturnButtonColor);
+                    DrawRectangleRounded(gameExitButton, gameMenuRoundness, 0,  gameExitButtonColor);
+
+                    DrawText("Return", (GetScreenWidth() / 2) - 55, (GetScreenHeight() / 2) - gameReturnY + (buttonHeight/2) - 15, 30, BLACK);
+                    DrawText("Exit", (GetScreenWidth() / 2) - 30, (GetScreenHeight() / 2) - gameExitY + (buttonHeight/2) - 15, 30, BLACK);
                 }
                 else if (menuMode == MenuNone)
                 {
@@ -146,8 +262,9 @@ int main()
                     }
                 }
             }
-            
-            DrawText(mousePosStr, 10, 10, 10, DARKGRAY);
+
+            DrawText(mousePosStr, 10, 30, 10, DARKGRAY);
+            DrawText(menuModeStr, 10, 40, 10, DARKGRAY);
             DrawFPS(10, 420);
 
         EndDrawing();
