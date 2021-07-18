@@ -21,9 +21,15 @@
 
 #include <stdlib.h>
 #include "raylib.h"
+#include "raymath.h"
 
 #define PHYSAC_IMPLEMENTATION
 #include "physac.h"
+
+struct Sprite {
+    Texture2D Texture;
+    Vector2 Position;
+};
 
 enum GAME_MODE {
     SP = 0,
@@ -90,6 +96,8 @@ int main()
     float player1Y = (GetScreenHeight() / 2.f) - (playerHeight / 2.f);
     float player2Y = (GetScreenHeight() / 2.f) - (playerHeight / 2.f);
 
+    float xMultiplier = 1000.f;
+
     bool bBallLaunched = false;
     float ballX = 0.f;
     float ballY = 0.f;
@@ -104,6 +112,12 @@ int main()
     // string that prints mouse coordinates on screen
     char *mousePosStr = (char*)malloc(100 * sizeof(char));
     char *menuModeStr = (char*)malloc(25 * sizeof(char));
+
+    int p1Score = 0, p2Score = 0;
+    char* p1ScoreStr = (char*)malloc(20 * sizeof(char));
+    char* p2ScoreStr = (char*)malloc(20 * sizeof(char));
+
+    bool player1Score = false;
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
@@ -130,6 +144,8 @@ int main()
 
         sprintf(mousePosStr,"Mouse position: %fpx %fpx", mousePoint.x, mousePoint.y);      
         sprintf(menuModeStr, "Menu Mode: %s", menuModeNames[menuMode]);
+        sprintf(p1ScoreStr, "P1 Score: %i", p1Score);
+        sprintf(p2ScoreStr, "P2 Score: %i", p2Score);
 
         Rectangle spButton = { (GetScreenWidth() / 2.f) - (buttonWidth / 2.f), (GetScreenHeight() / 2.f) - spY, buttonWidth, buttonHeight };
         Rectangle mpButton = { (GetScreenWidth() / 2.f) - (buttonWidth / 2.f), (GetScreenHeight() / 2.f) - mpY, buttonWidth, buttonHeight };
@@ -139,13 +155,23 @@ int main()
         Rectangle gameExitButton = { (GetScreenWidth() / 2.f) - (buttonWidth / 2.f), (GetScreenHeight() / 2.f) - gameExitY, buttonWidth, buttonHeight };
         Rectangle ballRect = { ballRectPos.x, ballRectPos.y, ballSize, ballSize };
 
-        Rectangle player1 = { +20.f, player1Y, playerWidth, playerHeight };
-        Rectangle player2 = { GetScreenWidth() - 40.f, player2Y, playerWidth, playerHeight };
+        Rectangle player1 = { +20.f, player1Y - playerHeight / 2.f, playerWidth, playerHeight };
+        Rectangle player2 = { GetScreenWidth() - 40.f, player2Y - playerHeight / 2.f, playerWidth, playerHeight };
         
         if (!bBallLaunched)
         {
-            ballX = player1.x + player1.width;
-            ballY = player1Y + playerHeight/2.f - ballSize/2.f;
+            ball->velocity = (Vector2) { 0, 0 };
+            if (!player1Score)
+            {
+                ballX = player1.x + player1.width;
+                ballY = player1Y + playerHeight/2.f - ballSize/2.f;
+            }
+            else
+            {
+                ballX = player2.x - player2.width;
+                ballY = player2Y + playerHeight/2.f - ballSize/2.f;
+            }
+            
             ball->position.x = ballX;
             ball->position.y = ballY;
         }
@@ -195,7 +221,16 @@ int main()
             {
                 gameExitButtonColor = YELLOW;
 
-                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) menuMode = MainMenu;
+                if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) 
+                {
+                    p1Score = 0;
+                    p2Score = 0;
+                    player1Y = GetScreenHeight() / 2.f - playerHeight / 2.f;
+                    player2Y = GetScreenHeight() / 2.f - playerHeight / 2.f;
+                    bBallLaunched = false;
+                    player1Score = false;
+                    menuMode = MainMenu;
+                }
             }
         }
 
@@ -221,8 +256,8 @@ int main()
                 // Middle line
                 DrawRectangle((GetScreenWidth() - 10.f) / 2.0f, (GetScreenHeight() - 1000.f) / 2.0f, 10.f, 1000.f, GRAY);
 
-                DrawText("P1 Score: ", 10, 10, 20, DARKGRAY);
-                DrawText("P2 Score: ", 600, 10, 20, DARKGRAY);
+                DrawText(p1ScoreStr, 10, 10, 20, DARKGRAY);
+                DrawText(p2ScoreStr, 600, 10, 20, DARKGRAY);
 
                 // Draw player rackets and the ball
                 DrawRectangleRounded(player1, 0.f, 0, GREEN);
@@ -239,25 +274,61 @@ int main()
                     player1Y += playerSpeed;
                 }
 
-                float p1YMultiplier = (ball->position.y <= player1Y + playerHeight/2) ?
-                    (player1Y + playerHeight/2) - ball->position.y : ball->position.y - (player1Y + playerHeight/2);
-                
+                // calculate ball force
+                float player1Pos = player1Y + (playerHeight / 2.f);
+                float player2Pos = player2Y + (playerHeight / 2.f);
+                float p1YMultiplier = (ball->position.y - player1Pos) * 10.f;
+                float p2YMultiplier = (ball->position.y - player2Pos) * 10.f;
+
                 if (IsKeyPressed(KEY_SPACE) && !bBallLaunched)
                 {
                     bBallLaunched = true;
 
-                    PhysicsAddForce(ball, (Vector2) { 1000, p1YMultiplier * 10 });
+                    if (player1Score == false)
+                    {
+                        PhysicsAddForce(ball, (Vector2) { 1000, 0 });
+                    }
+                    else 
+                    {
+                        PhysicsAddForce(ball, (Vector2) { -1000, 0 });
+                    }
                 }
 
-                if (CheckCollisionRecs(ballRect, player2))
+                if (CheckCollisionRecs(ballRect, player1))
                 {
+                    xMultiplier = 1000;
                     ball->velocity = (Vector2) { 0, 0 };
-                    PhysicsAddForce(ball, (Vector2) { -1000, 0 });
+                    PhysicsAddForce(ball, (Vector2) { xMultiplier, p1YMultiplier });
                 }
-                else if (CheckCollisionRecs(ballRect, player1))
+                else if (CheckCollisionRecs(ballRect, player2))
+                {
+                    xMultiplier = -1000;
+                    ball->velocity = (Vector2) { 0, 0 };
+                    PhysicsAddForce(ball, (Vector2) { xMultiplier, p2YMultiplier });
+                }
+
+                if (ball->position.y <= 0)
                 {
                     ball->velocity = (Vector2) { 0, 0 };
-                    PhysicsAddForce(ball, (Vector2) { 1000, p1YMultiplier * 10 });
+                    PhysicsAddForce(ball, (Vector2) { xMultiplier, 500 });
+                }
+                else if (ball->position.y >= GetScreenHeight())
+                {
+                    ball->velocity = (Vector2) { 0, 0 };
+                    PhysicsAddForce(ball, (Vector2) { xMultiplier, -500 });
+                }
+
+                if (ball->position.x <= 0)
+                {
+                    p2Score += 1;
+                    bBallLaunched = false;
+                    player1Score = false;
+                }
+                else if (ball->position.x >= GetScreenWidth())
+                {
+                    p1Score += 1;
+                    bBallLaunched = false;
+                    player1Score = true;
                 }
 
                 // Player 2 movement
@@ -274,7 +345,7 @@ int main()
                 }
                 else // SP 
                 {
-
+                    player2Y = Lerp(player2Y, ball->position.y, 0.1f);
                 }
 
                 if (menuMode == GameMenu)
