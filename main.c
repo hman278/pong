@@ -125,6 +125,8 @@ void Update()
             PlayerBScore++;
             bBallLaunched = false;
             Ball.position = (Vector2) { (GetScreenWidth() / 2.f), (GetScreenHeight() / 2.f) };
+            PlayerA.position =  (Vector2) { 20.f, GetScreenHeight()/2.f };
+            PlayerB.position = (Vector2) { GetScreenWidth() - 20.f, GetScreenHeight()/2.f };
             ballDir = (Vector2) { 1, 0 };
         }
         else if (Ball.position.x >= GetScreenWidth())
@@ -132,6 +134,8 @@ void Update()
             PlayerAScore++;
             bBallLaunched = false;
             Ball.position = (Vector2) { (GetScreenWidth() / 2.f), (GetScreenHeight() / 2.f) };
+            PlayerA.position =  (Vector2) { 20.f, GetScreenHeight()/2.f };
+            PlayerB.position = (Vector2) { GetScreenWidth() - 20.f, GetScreenHeight()/2.f };
             ballDir = (Vector2) { -1, 0 };
         }
     }
