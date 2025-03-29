@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "ball.h"
+#include "player_racket.h"
 #include "raylib.h"
 #include "raymath.h"
 
@@ -18,32 +20,9 @@
 
 typedef enum { MENU, PAUSED, WAITING, ONGOING } GameState;
 
-/* An entity needs a texture for visual representation and a position */
-typedef struct {
-    Texture2D texture;
-    Vector2 position;
-} Entity;
-
-/* TODO: Make sure the memory alignment is right, and no memory is wasted */
-typedef struct {
-    Entity base;
-    float speed;
-    Rectangle rect;
-    /* Define the number of frames for our racket sprite */
-    int frame_count;
-    int score;
-} PlayerRacket;
-
-typedef struct {
-    Entity base;
-    float speed;
-    Rectangle rect;
-} Ball;
-
 /* Globals */
 GameState g_game_state;
 
-Texture2D g_racket_texture;
 Texture2D g_ball_texture;
 
 PlayerRacket g_player_a, g_player_b;
@@ -52,21 +31,16 @@ Ball g_ball;
 
 char *g_debug_text;
 
-bool player_can_move(PlayerRacket player_racket) {
-    return (player_racket.base.position.y >=
-            g_racket_texture.height / 2.0f / player_racket.frame_count) &&
-           ((GetScreenHeight() - g_racket_texture.height / 2.0f / player_racket.frame_count));
-}
-
-void player_move(PlayerRacket player_racket, Vector2 move_dir) {
-    player_racket.base.position.y += g_player_b.speed * Vector2Length(move_dir);
+void ball_move(Vector2 dir) {
+    g_ball.base.centered_position.x += dir.x * g_ball.speed;
+    g_ball.base.centered_position.y += dir.y * g_ball.speed;
 }
 
 /* TODO: Make the ball go to the serving player */
 void reset_positions() {
-    g_player_a.base.position = PLAYER_A_START_POS;
-    g_player_b.base.position = PLAYER_B_START_POS;
-    g_ball.base.position = BALL_START_POS;
+    g_player_a.base.centered_position = PLAYER_A_START_POS;
+    g_player_b.base.centered_position = PLAYER_B_START_POS;
+    g_ball.base.centered_position = BALL_START_POS;
 }
 
 /* Set initial values */
@@ -99,10 +73,10 @@ void update() {
         g_game_state = ONGOING;
     }
 
-    if (bBallLaunched) {
-        Ball.position.x -= ballDir.x * ballSpeed;
-        Ball.position.y -= ballDir.y * ballSpeed;
-        racketRec.y = 0;
+    /* Don't move the ball until someone serves it */
+    if (g_game_state == ONGOING) {
+        /* TODO: Hardcoded value, change to match current player */
+        ball_move((Vector2){0, 1});
 
         // TODO: calculate y direction
         if (CheckCollisionRecs(
