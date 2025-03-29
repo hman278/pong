@@ -1,6 +1,7 @@
+file(GLOB SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.c")
+
 target_sources(${PROJECT_NAME}
-    PRIVATE
-        main.c
+    PRIVATE ${SRC_FILES}
 )
 
 target_include_directories(${PROJECT_NAME}
