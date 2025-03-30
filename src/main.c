@@ -7,48 +7,36 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "ball.h"
-#include "player_racket.h"
+#include "include/ball.h"
+#include "include/game_assets.h"
+#include "include/player_racket.h"
 #include "raylib.h"
 #include "raymath.h"
-
-#define PLAYER_OFFSET_X 20.0f
-#define PLAYER_A_START_POS ((Vector2){PLAYER_OFFSET_X, GetScreenHeight() / 2.0f})
-#define PLAYER_B_START_POS \
-    ((Vector2){GetScreenHeight() - PLAYER_OFFSET_X, GetScreenHeight() / 2.0f})
-#define BALL_START_POS ((Vector2){GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f})
 
 typedef enum { MENU, PAUSED, WAITING, ONGOING } GameState;
 
 /* Globals */
 GameState g_game_state;
 
-Texture2D g_ball_texture;
+PlayerRacket *g_player_a, g_player_b;
+Ball* g_ball;
 
-PlayerRacket g_player_a, g_player_b;
 int g_player_a_score, g_player_b_score;
-Ball g_ball;
 
-char *g_debug_text;
-
-void ball_move(Vector2 dir) {
-    g_ball.base.centered_position.x += dir.x * g_ball.speed;
-    g_ball.base.centered_position.y += dir.y * g_ball.speed;
-}
+char* g_debug_text;
 
 /* TODO: Make the ball go to the serving player */
 void reset_positions() {
-    g_player_a.base.centered_position = PLAYER_A_START_POS;
-    g_player_b.base.centered_position = PLAYER_B_START_POS;
-    g_ball.base.centered_position = BALL_START_POS;
+    player_set_position(g_player_a, PLAYER_A_START_POS);
+    player_set_position(g_player_b, PLAYER_B_START_POS);
 }
 
 /* Set initial values */
 void init() {
-    g_racket_texture = LoadTexture("resources/racket.png");
-    g_ball_texture = LoadTexture("resources/ball.png");
+    load_game_assets();
+    player_set_racket_texture(g_player_a, g_assets.racket_texture);
+    player_set_racket_texture(g_player_b, g_assets.racket_texture);
 
-    g_player_a.base.texture = g_player_b.base.texture = g_racket_texture;
     g_ball.base.texture = g_ball_texture;
 
     Rectangle racket_rec = (Rectangle){0, 0, (float)g_racket_texture.width,
@@ -61,6 +49,8 @@ void init() {
 
     reset_positions();
 }
+
+void shutdown() { unload_game_assets(); }
 
 void update() {
     Vector2 player_a_move_dir = (Vector2){(int)IsKeyDown(KEY_W), (int)IsKeyDown(KEY_S)};

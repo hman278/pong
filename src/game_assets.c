@@ -1,4 +1,4 @@
-#include "game_assets.h"
+#include "include/game_assets.h"
 
 #include <raylib.h>
 

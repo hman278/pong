@@ -8,4 +8,4 @@ typedef struct {
 
 extern GameAssets g_assets;
 void load_game_assets(void);
-void unload_game_asset(void);
+void unload_game_assets(void);
