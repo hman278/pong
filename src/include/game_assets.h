@@ -1,9 +1,10 @@
 #pragma once
 #include "core_types.h"
+#include "include/asset_texture.h"
 
 typedef struct {
-    Texture2D racket_texture;
-    Texture2D ball_texture;
+    AssetTexture racket_asset_texture;
+    AssetTexture ball_asset_texture;
 } GameAssets;
 
 extern GameAssets g_assets;

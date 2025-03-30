@@ -1,16 +1,15 @@
 #pragma once
 #include "core_types.h"
+#include "include/asset_texture.h"
 
 /* TODO: Make sure the memory alignment is right, and no memory is wasted */
 typedef struct {
     Rectangle rect;
-    Texture2D* texture;
-    /* Define the number of frames for our sprite */
-    int frame_count;
+    AssetTexture* asset_texture;
     float speed;
 } Entity;
 
-void entity_set_texture(Entity* entity, Texture2D* texture);
+void entity_set_asset_texture(Entity* entity, AssetTexture* asset_texture);
 void entity_set_position(Entity* entity, Vector2 pos);
-void entity_move(Entity* entity, Vector2 move_dir, bool check_can_move);
-bool entity_can_move(Entity* entity);
+void entity_move(Entity* entity, Vector2 move_dir);
+void entity_draw(Entity* entity, float frame_count, Color color);

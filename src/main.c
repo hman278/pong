@@ -9,17 +9,20 @@
 
 #include "include/ball.h"
 #include "include/game_assets.h"
+#include "include/helpers.h"
 #include "include/player_racket.h"
 #include "raylib.h"
-#include "raymath.h"
 
 typedef enum { MENU, PAUSED, WAITING, ONGOING } GameState;
+
+#define SCREEN_WIDTH 800;
+#define SCREEN_HEIGHT 450;
 
 /* Globals */
 GameState g_game_state;
 
-PlayerRacket *g_player_a, g_player_b;
-Ball* g_ball;
+PlayerRacket g_player_racket_a, g_player_racket_b;
+Ball g_ball;
 
 int g_player_a_score, g_player_b_score;
 
@@ -27,24 +30,25 @@ char* g_debug_text;
 
 /* TODO: Make the ball go to the serving player */
 void reset_positions() {
-    player_set_position(g_player_a, PLAYER_A_START_POS);
-    player_set_position(g_player_b, PLAYER_B_START_POS);
+    entity_set_position(&(g_player_racket_a.base), PLAYER_A_START_POS);
+    entity_set_position(&(g_player_racket_b.base), PLAYER_B_START_POS);
+    entity_set_position(&(g_ball.base), BALL_START_POS);
 }
 
 /* Set initial values */
 void init() {
     load_game_assets();
-    player_set_racket_texture(g_player_a, g_assets.racket_texture);
-    player_set_racket_texture(g_player_b, g_assets.racket_texture);
 
-    g_ball.base.texture = g_ball_texture;
+    g_player_racket_a = player_racket_create(0, 0, g_assets.racket_asset_texture.width,
+                                             g_assets.racket_asset_texture.height / 2,
+                                             &g_assets.racket_asset_texture, 2, 1.0f);
 
     Rectangle racket_rec = (Rectangle){0, 0, (float)g_racket_texture.width,
                                        (float)g_racket_texture.height / g_player_a.frame_count};
     Rectangle ball_rec =
         (Rectangle){0, 0, (float)g_ball_texture.width, (float)g_ball_texture.height};
 
-    g_player_a.rect = g_player_b.rect = racket_rec;
+    g_player_racket_a.rect = g_player_racket_b.rect = racket_rec;
     g_ball.rect = ball_rec;
 
     reset_positions();
@@ -56,8 +60,8 @@ void update() {
     Vector2 player_a_move_dir = (Vector2){(int)IsKeyDown(KEY_W), (int)IsKeyDown(KEY_S)};
     Vector2 player_b_move_dir = (Vector2){(int)IsKeyDown(KEY_UP), (int)IsKeyDown(KEY_DOWN)};
 
-    player_move(g_player_a, player_a_move_dir);
-    player_move(g_player_b, player_b_move_dir);
+    player_move(g_player_racket_a, player_a_move_dir);
+    player_move(g_player_racket_b, player_b_move_dir);
 
     if (IsKeyPressed(KEY_SPACE)) {
         g_game_state = ONGOING;
@@ -114,22 +118,11 @@ void update() {
     sprintf(playerBScoreStr, "%i", PlayerBScore);
 }
 
-/* Draws texture on screen centered */
-void draw_texture_on_screen(Texture2D texture, Rectangle source, Vector2 position,
-                            float frame_count, Color color) {
-    DrawTextureRec(texture, source,
-                   (Vector2){position.x - texture.width / 2.f,
-                             position.y - texture.height / 2.f / frame_count},
-                   color);
-}
-
 int main() {
     // Initialization
     //-------------------------------------------------------------------------------------
-    const int screenWidth = 800;
-    const int screenHeight = 450;
 
-    InitWindow(screenWidth, screenHeight, "Raylib Pong");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Raylib Pong");
 
     SetTargetFPS(120);  // Set our game to run at 120 frames-per-second
     //--------------------------------------------------------------------------------------
@@ -148,9 +141,9 @@ int main() {
 
         ClearBackground(RAYWHITE);
 
-        draw_texture_on_screen(racketTexture, racketRec, PlayerA.position, NUM_FRAMES, WHITE);
-        draw_texture_on_screen(racketTexture, racketRec, PlayerB.position, NUM_FRAMES, WHITE);
-        draw_texture_on_screen(ballTexture, ballRec, Ball.position, 1, WHITE);
+        entity_draw((Entity*)g_player_racket_a, BLUE);
+        entity_draw((Entity*)g_player_racket_b, RED);
+        entity_draw((Entity*)g_ball, GREEN);
 
         DrawFPS(10, 420);
 
