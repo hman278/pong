@@ -26,6 +26,10 @@ GameState g_game_state;
 PlayerRacket g_player_racket_a, g_player_racket_b;
 Ball g_ball;
 
+int g_player_a_score, g_player_b_score;
+
+char* g_debug_text;
+
 /* TODO: Make the ball go to the serving player */
 void reset_positions() {
     entity_set_position(&(g_player_racket_a.base), PLAYER_A_START_POS);
@@ -143,7 +147,7 @@ int main() {
         entity_draw((Entity*)g_player_racket_b, RED);
         entity_draw((Entity*)g_ball, GREEN);
 
-        DrawFPS(FPS_POS_X, FPS_POS_Y);
+        DrawFPS(10, 420);
 
         DrawText(playerAScoreStr, 10, 10, 30, BLUE);
         DrawText(playerBScoreStr, 740, 10, 30, BLUE);
