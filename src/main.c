@@ -30,7 +30,7 @@ PlayerRacket g_player_racket_a, g_player_racket_b;
 Ball g_ball;
 
 /* TODO: Make the ball go to the serving player */
-void reset_positions() {
+void reset_entity_positions() {
     entity_set_position(&(g_player_racket_a.base), PLAYER_RACKET_A_START_POS);
     entity_set_position(&(g_player_racket_b.base), PLAYER_RACKET_B_START_POS);
     entity_set_position(&(g_ball.base), BALL_START_POS);
@@ -53,7 +53,7 @@ void init() {
         .base = entity_create(player_racket_rect, &g_assets.racket_asset_texture), .score = 0};
     g_ball = (Ball){.base = entity_create(ball_rect, &g_assets.ball_asset_texture)};
 
-    reset_positions();
+    reset_entity_positions();
 }
 
 void shutdown() { game_assets_unload(); }
