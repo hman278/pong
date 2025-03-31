@@ -1,6 +1,6 @@
 #pragma once
+#include "asset_texture.h"
 #include "core_types.h"
-#include "include/asset_texture.h"
 
 typedef struct {
     AssetTexture racket_asset_texture;
@@ -8,5 +8,5 @@ typedef struct {
 } GameAssets;
 
 extern GameAssets g_assets;
-void load_game_assets(void);
-void unload_game_assets(void);
+void game_assets_load(void);
+void game_assets_unload(void);

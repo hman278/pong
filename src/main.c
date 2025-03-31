@@ -7,7 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "include/asset_texture.h"
 #include "include/ball.h"
+#include "include/core_types.h"
+#include "include/entity.h"
 #include "include/game_assets.h"
 #include "include/helpers.h"
 #include "include/player_racket.h"
@@ -28,95 +31,104 @@ Ball g_ball;
 
 /* TODO: Make the ball go to the serving player */
 void reset_positions() {
-    entity_set_position(&(g_player_racket_a.base), PLAYER_A_START_POS);
-    entity_set_position(&(g_player_racket_b.base), PLAYER_B_START_POS);
+    entity_set_position(&(g_player_racket_a.base), PLAYER_RACKET_A_START_POS);
+    entity_set_position(&(g_player_racket_b.base), PLAYER_RACKET_B_START_POS);
     entity_set_position(&(g_ball.base), BALL_START_POS);
 }
 
 /* Set initial values */
 void init() {
-    load_game_assets();
+    game_assets_load();
 
-    g_player_racket_a = player_racket_create(0, 0, g_assets.racket_asset_texture.width,
-                                             g_assets.racket_asset_texture.height / 2,
-                                             &g_assets.racket_asset_texture, 2, 1.0f);
+    Rectangle player_racket_rect = rect_create(0, 0, g_assets.racket_asset_texture.texture.width,
+                                               (int)g_assets.racket_asset_texture.texture.height /
+                                                   g_assets.racket_asset_texture.v_frame_count);
 
-    Rectangle racket_rec = (Rectangle){0, 0, (float)g_racket_texture.width,
-                                       (float)g_racket_texture.height / g_player_a.frame_count};
-    Rectangle ball_rec =
-        (Rectangle){0, 0, (float)g_ball_texture.width, (float)g_ball_texture.height};
+    Rectangle ball_rect = (Rectangle){0, 0, g_assets.ball_asset_texture.texture.width,
+                                      g_assets.ball_asset_texture.texture.height};
 
-    g_player_racket_a.rect = g_player_racket_b.rect = racket_rec;
-    g_ball.rect = ball_rec;
+    g_player_racket_a = (PlayerRacket){
+        .base = entity_create(player_racket_rect, &g_assets.racket_asset_texture), .score = 0};
+    g_player_racket_b = (PlayerRacket){
+        .base = entity_create(player_racket_rect, &g_assets.racket_asset_texture), .score = 0};
+    g_ball = (Ball){.base = entity_create(ball_rect, &g_assets.ball_asset_texture)};
 
     reset_positions();
 }
 
-void shutdown() { unload_game_assets(); }
+void shutdown() { game_assets_unload(); }
 
 void update() {
     Vector2 player_a_move_dir = (Vector2){(int)IsKeyDown(KEY_W), (int)IsKeyDown(KEY_S)};
     Vector2 player_b_move_dir = (Vector2){(int)IsKeyDown(KEY_UP), (int)IsKeyDown(KEY_DOWN)};
 
-    player_move(g_player_racket_a, player_a_move_dir);
-    player_move(g_player_racket_b, player_b_move_dir);
+    entity_move(&g_player_racket_a.base, player_a_move_dir);
+    entity_move(&g_player_racket_b.base, player_b_move_dir);
 
     if (IsKeyPressed(KEY_SPACE)) {
         g_game_state = ONGOING;
     }
 
     /* Don't move the ball until someone serves it */
-    if (g_game_state == ONGOING) {
-        /* TODO: Hardcoded value, change to match current player */
-        ball_move((Vector2){0, 1});
+    /* if (g_game_state == ONGOING) { */
+    /*     /1* TODO: Hardcoded value, change to match current player *1/ */
+    /*     ball_move((Vector2){0, 1}); */
 
-        // TODO: calculate y direction
-        if (CheckCollisionRecs(
-                (Rectangle){Ball.position.x, Ball.position.y, ballRec.width, ballRec.height},
-                (Rectangle){PlayerA.position.x + (racketRec.width / 2.f),
-                            PlayerA.position.y - (racketRec.height / 2.f), racketRec.width,
-                            racketRec.height})) {
-            ballDir.x = -1;
-            // lower -90 to make the ball more bouncy
-            ballDir.y = (Ball.position.y - PlayerA.position.y) / -90.f;
-            racketRec.y = 1 * racketTexture.height / NUM_FRAMES;
-        } else if (CheckCollisionRecs(
-                       (Rectangle){Ball.position.x, Ball.position.y, ballRec.width, ballRec.height},
-                       (Rectangle){PlayerB.position.x - (racketRec.width / 2.f),
-                                   PlayerB.position.y - (racketRec.height / 2.f), racketRec.width,
-                                   racketRec.height})) {
-            ballDir.x = +1;
-            ballDir.y = (Ball.position.y - PlayerB.position.y) / -90.f;
-            racketRec.y = 1 * racketTexture.height / NUM_FRAMES;
-        } else if (Ball.position.y >= GetScreenHeight() - (ballTexture.height / 2.f)) {
-            ballDir.y *= -1;
-        } else if (Ball.position.y <= 0 + (ballTexture.height / 2.f)) {
-            ballDir.y *= -1;
-        }
+    /*     // TODO: calculate y direction */
+    /*     if (CheckCollisionRecs( */
+    /*             (Rectangle){Ball.position.x, Ball.position.y, ballRec.width, ballRec.height},
+     */
+    /*             (Rectangle){PlayerA.position.x + (racketRec.width / 2.f), */
+    /*                         PlayerA.position.y - (racketRec.height / 2.f), racketRec.width,
+     */
+    /*                         racketRec.height})) { */
+    /*         ballDir.x = -1; */
+    /*         // lower -90 to make the ball more bouncy */
+    /*         ballDir.y = (Ball.position.y - PlayerA.position.y) / -90.f; */
+    /*         racketRec.y = 1 * racketTexture.height / NUM_FRAMES; */
+    /*     } else if (CheckCollisionRecs( */
+    /*                    (Rectangle){Ball.position.x, Ball.position.y, ballRec.width,
+     * ballRec.height}, */
+    /*                    (Rectangle){PlayerB.position.x - (racketRec.width / 2.f), */
+    /*                                PlayerB.position.y - (racketRec.height / 2.f),
+     * racketRec.width, */
+    /*                                racketRec.height})) { */
+    /*         ballDir.x = +1; */
+    /*         ballDir.y = (Ball.position.y - PlayerB.position.y) / -90.f; */
+    /*         racketRec.y = 1 * racketTexture.height / NUM_FRAMES; */
+    /*     } else if (Ball.position.y >= GetScreenHeight() - (ballTexture.height / 2.f)) { */
+    /*         ballDir.y *= -1; */
+    /*     } else if (Ball.position.y <= 0 + (ballTexture.height / 2.f)) { */
+    /*         ballDir.y *= -1; */
+    /*     } */
 
-        if (Ball.position.x <= 0) {
-            PlayerBScore++;
-            bBallLaunched = false;
-            Ball.position = (Vector2){(GetScreenWidth() / 2.f), (GetScreenHeight() / 2.f)};
-            PlayerA.position = (Vector2){20.f, GetScreenHeight() / 2.f};
-            PlayerB.position = (Vector2){GetScreenWidth() - 20.f, GetScreenHeight() / 2.f};
-            ballDir = (Vector2){1, 0};
-        } else if (Ball.position.x >= GetScreenWidth()) {
-            PlayerAScore++;
-            bBallLaunched = false;
-            Ball.position = (Vector2){(GetScreenWidth() / 2.f), (GetScreenHeight() / 2.f)};
-            PlayerA.position = (Vector2){20.f, GetScreenHeight() / 2.f};
-            PlayerB.position = (Vector2){GetScreenWidth() - 20.f, GetScreenHeight() / 2.f};
-            ballDir = (Vector2){-1, 0};
-        }
-    }
+    /*     if (Ball.position.x <= 0) { */
+    /*         PlayerBScore++; */
+    /*         bBallLaunched = false; */
+    /*         Ball.position = (Vector2){(GetScreenWidth() / 2.f), (GetScreenHeight() / 2.f)};
+     */
+    /*         PlayerA.position = (Vector2){20.f, GetScreenHeight() / 2.f}; */
+    /*         PlayerB.position = (Vector2){GetScreenWidth() - 20.f, GetScreenHeight() / 2.f};
+     */
+    /*         ballDir = (Vector2){1, 0}; */
+    /*     } else if (Ball.position.x >= GetScreenWidth()) { */
+    /*         PlayerAScore++; */
+    /*         bBallLaunched = false; */
+    /*         Ball.position = (Vector2){(GetScreenWidth() / 2.f), (GetScreenHeight() / 2.f)};
+     */
+    /*         PlayerA.position = (Vector2){20.f, GetScreenHeight() / 2.f}; */
+    /*         PlayerB.position = (Vector2){GetScreenWidth() - 20.f, GetScreenHeight() / 2.f};
+     */
+    /*         ballDir = (Vector2){-1, 0}; */
+    /*     } */
+    /* } */
 
-    sprintf(debugText, "%f", (Ball.position.y - PlayerA.position.y) / -90.f);
-    sprintf(playerAScoreStr, "%i", PlayerAScore);
-    sprintf(playerBScoreStr, "%i", PlayerBScore);
+    /* sprintf(debugText, "%f", (Ball.position.y - PlayerA.position.y) / -90.f); */
+    /* sprintf(playerAScoreStr, "%i", PlayerAScore); */
+    /* sprintf(playerBScoreStr, "%i", PlayerBScore); */
 }
 
-int main() {
+int main(void) {
     // Initialization
     //-------------------------------------------------------------------------------------
 
@@ -125,7 +137,7 @@ int main() {
     SetTargetFPS(120);  // Set our game to run at 120 frames-per-second
     //--------------------------------------------------------------------------------------
 
-    Start();
+    init();
 
     // Main game loop
     while (!WindowShouldClose())  // Detect window close button or ESC key
@@ -139,14 +151,14 @@ int main() {
 
         ClearBackground(RAYWHITE);
 
-        entity_draw((Entity*)g_player_racket_a, BLUE);
-        entity_draw((Entity*)g_player_racket_b, RED);
-        entity_draw((Entity*)g_ball, GREEN);
+        entity_draw((Entity*)&g_player_racket_a.base, BLUE);
+        entity_draw((Entity*)&g_player_racket_b.base, RED);
+        entity_draw((Entity*)&g_ball.base, GREEN);
 
         DrawFPS(FPS_POS_X, FPS_POS_Y);
 
-        DrawText(playerAScoreStr, 10, 10, 30, BLUE);
-        DrawText(playerBScoreStr, 740, 10, 30, BLUE);
+        /* DrawText(playerAScoreStr, 10, 10, 30, BLUE); */
+        /* DrawText(playerBScoreStr, 740, 10, 30, BLUE); */
 
         EndDrawing();
         //----------------------------------------------------------------------------------
@@ -155,6 +167,7 @@ int main() {
     // De-Initialization
     //--------------------------------------------------------------------------------------
     CloseWindow();  // Close window and OpenGL context
+    shutdown();
     //--------------------------------------------------------------------------------------
 
     return 0;

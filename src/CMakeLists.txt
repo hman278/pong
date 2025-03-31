@@ -1,4 +1,4 @@
-file(GLOB SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.c")
+file(GLOB_RECURSE SRC_FILES "${CMAKE_CURRENT_SOURCE_DIR}/*.c")
 
 target_sources(${PROJECT_NAME}
     PRIVATE ${SRC_FILES}
@@ -6,5 +6,5 @@ target_sources(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME}
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )

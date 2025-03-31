@@ -1,5 +1,5 @@
 #pragma once
-#include "include/core_types.h"
+#include "core_types.h"
 
 typedef struct {
     Texture2D texture;
