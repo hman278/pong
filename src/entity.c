@@ -7,9 +7,17 @@ void entity_set_position(Entity* entity, Vector2 pos) {
     entity->rect.y = pos.y;
 }
 
+Vector2 entity_get_middle_point(Entity* entity) {
+    return (Vector2){
+        entity->rect.x - entity->rect.width / 2.0f,
+        entity->rect.y - entity->rect.height / 2.0f,
+    };
+}
+
 /* TODO: Add screen bound checking */
-void entity_move(Entity* entity, Vector2 move_dir) {
-    Vector2 velocity = (Vector2){entity->speed * move_dir.x, entity->speed * move_dir.y};
+void entity_move(Entity* entity) {
+    Vector2 velocity =
+        (Vector2){entity->speed * entity->move_dir.x, entity->speed * entity->move_dir.y};
 
     entity->rect.x += velocity.x;
     entity->rect.y += velocity.y;
@@ -17,6 +25,5 @@ void entity_move(Entity* entity, Vector2 move_dir) {
 
 /* TODO: Check if the drawing coordinates are correct */
 void entity_draw(Entity* entity, Color color) {
-    DrawTextureRec(*entity->texture, entity->rect, (Vector2){entity->rect.x, entity->rect.y},
-                   color);
+    DrawTexture(*entity->texture, entity->rect.x, entity->rect.y, color);
 }

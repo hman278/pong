@@ -7,10 +7,12 @@
 typedef struct {
     Rectangle rect;
     Texture2D* texture;
+    Vector2 move_dir;
     float speed;
 } Entity;
 
 void entity_set_asset_texture(Entity* entity, Texture2D* texture);
 void entity_set_position(Entity* entity, Vector2 pos);
-void entity_move(Entity* entity, Vector2 move_dir);
+Vector2 entity_get_middle_point(Entity* entity);
+void entity_move(Entity* entity);
 void entity_draw(Entity* entity, Color color);

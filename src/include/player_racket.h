@@ -16,6 +16,7 @@
 
 #define PLAYER_RACKET_WIDTH g_assets.racket_texture.width
 #define PLAYER_RACKET_HEIGHT g_assets.racket_texture.height
+
 #define PLAYER_DEFAULT_SPEED 1
 
 typedef struct {

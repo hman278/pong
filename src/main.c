@@ -54,16 +54,18 @@ void init() {
         .base = entity_create(player_racket_b_rect, &g_assets.racket_texture), .score = 0};
     g_ball = (Ball){.base = entity_create(ball_rect, &g_assets.ball_texture)};
 
-    reset_entity_positions();
+    // TODO: Make the direction depend on the serving player player and their vertical position
+    g_ball.base.move_dir = (Vector2){0, 1};
 }
 
 void shutdown() { game_assets_unload(); }
-void update() {
-    Vector2 player_a_move_dir = (Vector2){(int)IsKeyDown(KEY_W), (int)IsKeyDown(KEY_S)};
-    Vector2 player_b_move_dir = (Vector2){(int)IsKeyDown(KEY_UP), (int)IsKeyDown(KEY_DOWN)};
 
-    entity_move(&g_player_racket_a.base, player_a_move_dir);
-    entity_move(&g_player_racket_b.base, player_b_move_dir);
+void update() {
+    g_player_racket_a.base.move_dir = (Vector2){(int)IsKeyDown(KEY_W), (int)IsKeyDown(KEY_S)};
+    g_player_racket_b.base.move_dir = (Vector2){(int)IsKeyDown(KEY_UP), (int)IsKeyDown(KEY_DOWN)};
+
+    entity_move(&g_player_racket_a.base);
+    entity_move(&g_player_racket_b.base);
 
     if (IsKeyPressed(KEY_SPACE)) {
         g_game_state = ONGOING;
@@ -76,58 +78,54 @@ void update() {
     /* --------------------------------- */
 
     /* Don't move the ball until someone serves it */
-    /* if (g_game_state == ONGOING) { */
-    /*     /1* TODO: Hardcoded value, change to match current player *1/ */
-    /*     ball_move((Vector2){0, 1}); */
+    // if (g_game_state == ONGOING) {
+    //     /*  TODO: Hardcoded value, change to match current player */
+    //     entity_move(&(g_ball.base));
 
-    /*     // TODO: calculate y direction */
-    /*     if (CheckCollisionRecs( */
-    /*             (Rectangle){Ball.position.x, Ball.position.y, ballRec.width, ballRec.height},
-     */
-    /*             (Rectangle){PlayerA.position.x + (racketRec.width / 2.f), */
-    /*                         PlayerA.position.y - (racketRec.height / 2.f), racketRec.width,
-     */
-    /*                         racketRec.height})) { */
-    /*         ballDir.x = -1; */
-    /*         // lower -90 to make the ball more bouncy */
-    /*         ballDir.y = (Ball.position.y - PlayerA.position.y) / -90.f; */
-    /*         racketRec.y = 1 * racketTexture.height / NUM_FRAMES; */
-    /*     } else if (CheckCollisionRecs( */
-    /*                    (Rectangle){Ball.position.x, Ball.position.y, ballRec.width,
-     * ballRec.height}, */
-    /*                    (Rectangle){PlayerB.position.x - (racketRec.width / 2.f), */
-    /*                                PlayerB.position.y - (racketRec.height / 2.f),
-     * racketRec.width, */
-    /*                                racketRec.height})) { */
-    /*         ballDir.x = +1; */
-    /*         ballDir.y = (Ball.position.y - PlayerB.position.y) / -90.f; */
-    /*         racketRec.y = 1 * racketTexture.height / NUM_FRAMES; */
-    /*     } else if (Ball.position.y >= GetScreenHeight() - (ballTexture.height / 2.f)) { */
-    /*         ballDir.y *= -1; */
-    /*     } else if (Ball.position.y <= 0 + (ballTexture.height / 2.f)) { */
-    /*         ballDir.y *= -1; */
-    /*     } */
+    //     /*  TODO: calculate y direction */
+    //     if (CheckCollisionRecs(
+    //             g_ball.base.rect,
+    //             (Rectangle){g_player_racket_a.base.rect.x + (PLAYER_RACKET_WIDTH / 2.f),
+    //                         g_player_racket_a.base.rect.y - (PLAYER_RACKET_HEIGHT / 2.f),
+    //                         PLAYER_RACKET_WIDTH, g_ball.base.rect.height})) {
+    //         ball_dir.x *= -1;
+    //         // lower -90 to make the ball more bouncy
+    //         ball_dir.y = (Ball.position.y - PlayerA.position.y) / -90.f;
+    //         racketRec.y = 1 * racketTexture.height / NUM_FRAMES;
+    //     } else if (CheckCollisionRecs(
+    //                    (Rectangle){Ball.position.x, Ball.position.y, ballRec.width,
+    //                    ballRec.height}, (Rectangle){PlayerB.position.x - (racketRec.width / 2.f),
+    //                                PlayerB.position.y - (racketRec.height / 2.f),
+    //                                racketRec.width, racketRec.height})) {
+    //         ball_dir.x = +1;
+    //         ball_dir.y = (Ball.position.y - PlayerB.position.y) / -90.f;
+    //         racketRec.y = 1 * racketTexture.height / NUM_FRAMES;
+    //     } else if (Ball.position.y >= GetScreenHeight() - (ballTexture.height / 2.f)) {
+    //         ball_dir.y *= -1;
+    //     } else if (Ball.position.y <= 0 + (ballTexture.height / 2.f)) {
+    //         ball_dir.y *= -1;
+    //     }
 
-    /*     if (Ball.position.x <= 0) { */
-    /*         PlayerBScore++; */
-    /*         bBallLaunched = false; */
-    /*         Ball.position = (Vector2){(GetScreenWidth() / 2.f), (GetScreenHeight() / 2.f)};
-     */
-    /*         PlayerA.position = (Vector2){20.f, GetScreenHeight() / 2.f}; */
-    /*         PlayerB.position = (Vector2){GetScreenWidth() - 20.f, GetScreenHeight() / 2.f};
-     */
-    /*         ballDir = (Vector2){1, 0}; */
-    /*     } else if (Ball.position.x >= GetScreenWidth()) { */
-    /*         PlayerAScore++; */
-    /*         bBallLaunched = false; */
-    /*         Ball.position = (Vector2){(GetScreenWidth() / 2.f), (GetScreenHeight() / 2.f)};
-     */
-    /*         PlayerA.position = (Vector2){20.f, GetScreenHeight() / 2.f}; */
-    /*         PlayerB.position = (Vector2){GetScreenWidth() - 20.f, GetScreenHeight() / 2.f};
-     */
-    /*         ballDir = (Vector2){-1, 0}; */
-    /*     } */
-    /* } */
+    //     if (Ball.position.x <= 0) {
+    //         PlayerBScore++;
+    //         bBallLaunched = false;
+    //         Ball.position = (Vector2){(GetScreenWidth() / 2.f), (GetScreenHeight() / 2.f)};
+
+    //         PlayerA.position = (Vector2){20.f, GetScreenHeight() / 2.f};
+    //         PlayerB.position = (Vector2){GetScreenWidth() - 20.f, GetScreenHeight() / 2.f};
+
+    //         ball_dir = (Vector2){1, 0};
+    //     } else if (Ball.position.x >= GetScreenWidth()) {
+    //         PlayerAScore++;
+    //         bBallLaunched = false;
+    //         Ball.position = (Vector2){(GetScreenWidth() / 2.f), (GetScreenHeight() / 2.f)};
+
+    //         PlayerA.position = (Vector2){20.f, GetScreenHeight() / 2.f};
+    //         PlayerB.position = (Vector2){GetScreenWidth() - 20.f, GetScreenHeight() / 2.f};
+
+    //         ball_dir = (Vector2){-1, 0};
+    //     }
+    // }
 
     /* sprintf(debugText, "%f", (Ball.position.y - PlayerA.position.y) / -90.f); */
     /* sprintf(playerAScoreStr, "%i", PlayerAScore); */
