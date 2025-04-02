@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "include/asset_texture.h"
 #include "include/ball.h"
 #include "include/core_types.h"
 #include "include/entity.h"
@@ -40,24 +39,25 @@ void reset_entity_positions() {
 void init() {
     game_assets_load();
 
-    Rectangle player_racket_rect = rect_create(0, 0, g_assets.racket_asset_texture.texture.width,
-                                               (int)g_assets.racket_asset_texture.texture.height /
-                                                   g_assets.racket_asset_texture.v_frame_count);
+    Rectangle player_racket_a_rect =
+        rect_create(PLAYER_RACKET_A_START_POS.x, PLAYER_RACKET_A_START_POS.y, PLAYER_RACKET_WIDTH,
+                    PLAYER_RACKET_HEIGHT);
+    Rectangle player_racket_b_rect =
+        rect_create(PLAYER_RACKET_B_START_POS.x, PLAYER_RACKET_B_START_POS.y, PLAYER_RACKET_WIDTH,
+                    PLAYER_RACKET_HEIGHT);
 
-    Rectangle ball_rect = (Rectangle){0, 0, g_assets.ball_asset_texture.texture.width,
-                                      g_assets.ball_asset_texture.texture.height};
+    Rectangle ball_rect = (Rectangle){BALL_START_POS.x, BALL_START_POS.y, BALL_SIZE, BALL_SIZE};
 
     g_player_racket_a = (PlayerRacket){
-        .base = entity_create(player_racket_rect, &g_assets.racket_asset_texture), .score = 0};
+        .base = entity_create(player_racket_a_rect, &g_assets.racket_texture), .score = 0};
     g_player_racket_b = (PlayerRacket){
-        .base = entity_create(player_racket_rect, &g_assets.racket_asset_texture), .score = 0};
-    g_ball = (Ball){.base = entity_create(ball_rect, &g_assets.ball_asset_texture)};
+        .base = entity_create(player_racket_b_rect, &g_assets.racket_texture), .score = 0};
+    g_ball = (Ball){.base = entity_create(ball_rect, &g_assets.ball_texture)};
 
     reset_entity_positions();
 }
 
 void shutdown() { game_assets_unload(); }
-
 void update() {
     Vector2 player_a_move_dir = (Vector2){(int)IsKeyDown(KEY_W), (int)IsKeyDown(KEY_S)};
     Vector2 player_b_move_dir = (Vector2){(int)IsKeyDown(KEY_UP), (int)IsKeyDown(KEY_DOWN)};
@@ -68,6 +68,12 @@ void update() {
     if (IsKeyPressed(KEY_SPACE)) {
         g_game_state = ONGOING;
     }
+
+    /* ---- DEBUG MOUSE COORDINATES ---- */
+    Vector2 mouse = GetMousePosition();
+
+    DrawText(TextFormat("Mouse: [%.0f, %.0f]", mouse.x, mouse.y), 10, 10, 20, BLUE);
+    /* --------------------------------- */
 
     /* Don't move the ball until someone serves it */
     /* if (g_game_state == ONGOING) { */
