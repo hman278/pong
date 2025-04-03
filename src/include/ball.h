@@ -7,6 +7,7 @@
                GetScreenHeight() / 2.0f - g_assets.ball_texture.height / 2.0f})
 
 #define BALL_SIZE g_assets.ball_texture.width
+#define BALL_DEFAULT_SPEED 4.0f
 
 typedef struct {
     Entity base;

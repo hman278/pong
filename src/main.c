@@ -11,14 +11,14 @@
 #include "include/core_types.h"
 #include "include/entity.h"
 #include "include/game_assets.h"
+#include "include/globals.h"
 #include "include/helpers.h"
 #include "include/player_racket.h"
 #include "raylib.h"
+#include "raymath.h"
 
 typedef enum { MENU, PAUSED, WAITING, ONGOING } GameState;
 
-#define SCREEN_WIDTH 800
-#define SCREEN_HEIGHT 450
 #define FPS_POS_X 10
 #define FPS_POS_Y 420
 
@@ -26,6 +26,7 @@ typedef enum { MENU, PAUSED, WAITING, ONGOING } GameState;
 GameState g_game_state;
 
 PlayerRacket g_player_racket_a, g_player_racket_b;
+PlayerRacket* g_serving_player;
 Ball g_ball;
 
 /* TODO: Make the ball go to the serving player */
@@ -54,18 +55,26 @@ void init() {
         .base = entity_create(player_racket_b_rect, &g_assets.racket_texture), .score = 0};
     g_ball = (Ball){.base = entity_create(ball_rect, &g_assets.ball_texture)};
 
-    // TODO: Make the direction depend on the serving player player and their vertical position
-    g_ball.base.move_dir = (Vector2){0, 1};
+    // Player A is the default serving player
+    // TODO: If rematch behavior is added, remember the player who lost the previous game
+    g_serving_player = &g_player_racket_a;
+
+    float dx = g_ball.base.rect.x - g_serving_player->base.rect.x;
+    g_ball.base.move_dir = Vector2Normalize((Vector2){dx, 0.0f});
 }
 
 void shutdown() { game_assets_unload(); }
 
 void update() {
-    g_player_racket_a.base.move_dir = (Vector2){(int)IsKeyDown(KEY_W), (int)IsKeyDown(KEY_S)};
-    g_player_racket_b.base.move_dir = (Vector2){(int)IsKeyDown(KEY_UP), (int)IsKeyDown(KEY_DOWN)};
+    g_player_racket_a.base.move_dir.y = (int)IsKeyDown(KEY_S) - IsKeyDown(KEY_W);
+    g_player_racket_b.base.move_dir.y = (int)IsKeyDown(KEY_DOWN) - IsKeyDown(KEY_UP);
+    g_player_racket_a.base.speed = PLAYER_DEFAULT_SPEED;
+    g_player_racket_b.base.speed = PLAYER_DEFAULT_SPEED;
+    g_ball.base.speed = BALL_DEFAULT_SPEED;
 
-    entity_move(&g_player_racket_a.base);
-    entity_move(&g_player_racket_b.base);
+    entity_move(&g_player_racket_a.base, true);
+    entity_move(&g_player_racket_b.base, true);
+    entity_move(&g_ball.base, false);
 
     if (IsKeyPressed(KEY_SPACE)) {
         g_game_state = ONGOING;
@@ -136,7 +145,7 @@ int main(void) {
     // Initialization
     //-------------------------------------------------------------------------------------
 
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Raylib Pong");
+    InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Raylib Pong");
 
     SetTargetFPS(120);  // Set our game to run at 120 frames-per-second
     //--------------------------------------------------------------------------------------

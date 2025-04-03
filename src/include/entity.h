@@ -9,10 +9,13 @@ typedef struct {
     Texture2D* texture;
     Vector2 move_dir;
     float speed;
+    Vector2 _prev_position;
 } Entity;
 
 void entity_set_asset_texture(Entity* entity, Texture2D* texture);
 void entity_set_position(Entity* entity, Vector2 pos);
+Vector2 entity_get_position(Entity* entity);
 Vector2 entity_get_middle_point(Entity* entity);
-void entity_move(Entity* entity);
+bool entity_is_out_of_window_bounds(Entity* entity);
+void entity_move(Entity* entity, bool check_out_of_window_bounds);
 void entity_draw(Entity* entity, Color color);
