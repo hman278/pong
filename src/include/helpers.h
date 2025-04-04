@@ -14,3 +14,7 @@ static inline Entity entity_create(Rectangle rect, Texture2D* texture) {
 
     return entity;
 }
+
+static inline Vector2 rect_get_centered_position(Rectangle* rect) {
+    return (Vector2){rect->x + rect->width / 2.0f, rect->y + rect->height / 2.0f};
+}

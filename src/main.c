@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "include/ball.h"
 #include "include/core_types.h"
@@ -21,13 +22,22 @@ typedef enum { MENU, PAUSED, WAITING, ONGOING } GameState;
 
 #define FPS_POS_X 10
 #define FPS_POS_Y 420
+#define WALL_THICKNESS 20.0f
+#define ENTITY_COUNT 5
 
 /* Globals */
 GameState g_game_state;
 
 PlayerRacket g_player_racket_a, g_player_racket_b;
-PlayerRacket* g_serving_player;
 Ball g_ball;
+Entity g_wall_top, g_wall_bottom;
+
+PlayerRacket* g_serving_player;
+PlayerRacket* g_last_ball_hit_player;
+
+// Decided not to overengineer and keep things simple here,
+// since the entity count is small and known
+Entity* g_entities[ENTITY_COUNT];
 
 /* TODO: Make the ball go to the serving player */
 void reset_entity_positions() {
@@ -40,24 +50,37 @@ void reset_entity_positions() {
 void init() {
     game_assets_load();
 
-    Rectangle player_racket_a_rect =
+    Rectangle rect_player_racket_a =
         rect_create(PLAYER_RACKET_A_START_POS.x, PLAYER_RACKET_A_START_POS.y, PLAYER_RACKET_WIDTH,
                     PLAYER_RACKET_HEIGHT);
-    Rectangle player_racket_b_rect =
+    Rectangle rect_player_racket_b =
         rect_create(PLAYER_RACKET_B_START_POS.x, PLAYER_RACKET_B_START_POS.y, PLAYER_RACKET_WIDTH,
                     PLAYER_RACKET_HEIGHT);
-
-    Rectangle ball_rect = (Rectangle){BALL_START_POS.x, BALL_START_POS.y, BALL_SIZE, BALL_SIZE};
+    Rectangle rect_ball = rect_create(BALL_START_POS.x, BALL_START_POS.y, BALL_SIZE, BALL_SIZE);
+    Rectangle rect_wall_top = rect_create(0.0f, -WALL_THICKNESS, WINDOW_WIDTH, WALL_THICKNESS);
+    Rectangle rect_wall_bottom = rect_create(0.0f, WINDOW_HEIGHT, WINDOW_WIDTH, WALL_THICKNESS);
 
     g_player_racket_a = (PlayerRacket){
-        .base = entity_create(player_racket_a_rect, &g_assets.racket_texture), .score = 0};
+        .base = entity_create(rect_player_racket_a, &g_assets.racket_texture), .score = 0};
     g_player_racket_b = (PlayerRacket){
-        .base = entity_create(player_racket_b_rect, &g_assets.racket_texture), .score = 0};
-    g_ball = (Ball){.base = entity_create(ball_rect, &g_assets.ball_texture)};
+        .base = entity_create(rect_player_racket_b, &g_assets.racket_texture), .score = 0};
+    g_ball = (Ball){.base = entity_create(rect_ball, &g_assets.ball_texture)};
+    // Create invisible walls for the top and bottom of the screen
+    g_wall_top = entity_create(rect_wall_top, NULL);
+    g_wall_bottom = entity_create(rect_wall_bottom, NULL);
+
+    Entity* entities[ENTITY_COUNT] = {&g_player_racket_a.base, &g_player_racket_b.base,
+                                      &g_ball.base, &g_wall_top, &g_wall_bottom};
+    memcpy(g_entities, entities, sizeof(g_entities));
+
+    g_player_racket_a.base.speed = PLAYER_DEFAULT_SPEED;
+    g_player_racket_b.base.speed = PLAYER_DEFAULT_SPEED;
+    g_ball.base.speed = BALL_DEFAULT_SPEED;
 
     // Player A is the default serving player
     // TODO: If rematch behavior is added, remember the player who lost the previous game
     g_serving_player = &g_player_racket_a;
+    g_last_ball_hit_player = g_serving_player;
 
     float dx = g_ball.base.rect.x - g_serving_player->base.rect.x;
     g_ball.base.move_dir = Vector2Normalize((Vector2){dx, 0.0f});
@@ -68,16 +91,15 @@ void shutdown() { game_assets_unload(); }
 void update() {
     g_player_racket_a.base.move_dir.y = (int)IsKeyDown(KEY_S) - IsKeyDown(KEY_W);
     g_player_racket_b.base.move_dir.y = (int)IsKeyDown(KEY_DOWN) - IsKeyDown(KEY_UP);
-    g_player_racket_a.base.speed = PLAYER_DEFAULT_SPEED;
-    g_player_racket_b.base.speed = PLAYER_DEFAULT_SPEED;
-    g_ball.base.speed = BALL_DEFAULT_SPEED;
 
     entity_move(&g_player_racket_a.base, true);
     entity_move(&g_player_racket_b.base, true);
     entity_move(&g_ball.base, false);
 
-    if (IsKeyPressed(KEY_SPACE)) {
-        g_game_state = ONGOING;
+    for (int i = 0; i < ENTITY_COUNT; ++i) {
+        Entity* collider = g_entities[i];
+        if (entity_is_colliding(&g_ball.base, collider, true)) {
+        }
     }
 
     /* ---- DEBUG MOUSE COORDINATES ---- */
