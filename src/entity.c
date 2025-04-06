@@ -1,6 +1,9 @@
 #include "include/entity.h"
 
+#include <string.h>
+
 #include "include/globals.h"
+#include "include/helpers.h"
 #include "raylib.h"
 
 void entity_set_asset_texture(Entity* entity, Texture2D* texture) { entity->texture = texture; }
@@ -10,6 +13,8 @@ void entity_move(Entity* entity, bool check_out_of_window_bounds) {
 
     Vector2 velocity =
         (Vector2){entity->speed * entity->move_dir.x, entity->speed * entity->move_dir.y};
+
+    entity->_velocity = velocity;
 
     entity->rect.x += velocity.x;
     entity->rect.y += velocity.y;
@@ -24,29 +29,35 @@ void entity_draw(Entity* entity, Color color) {
     DrawTexture(*entity->texture, entity->rect.x, entity->rect.y, color);
 }
 
-void entity_set_position(Entity* entity, Vector2 pos) {
-    entity->rect.x = pos.x;
-    entity->rect.y = pos.y;
+void entity_set_position(Entity* entity, Vector2* pos) {
+    entity->rect.x = pos->x;
+    entity->rect.y = pos->y;
 }
 
 Vector2 entity_get_position(Entity* entity) { return (Vector2){entity->rect.x, entity->rect.y}; }
 
-Vector2 entity_get_middle_point(Entity* entity) {
-    return (Vector2){
-        entity->rect.x - entity->rect.width / 2.0f,
-        entity->rect.y - entity->rect.height / 2.0f,
-    };
-}
+Vector2 entity_get_velocity(Entity* entity) { return entity->_velocity; }
 
 bool entity_is_out_of_window_bounds(Entity* entity) {
     return ((entity->rect.y + entity->rect.height > WINDOW_HEIGHT) || (entity->rect.y < 0)) ||
            ((entity->rect.x + entity->rect.width > WINDOW_WIDTH) || (entity->rect.x < 0));
 }
 
-bool entity_is_colliding(Entity* entity_a, Entity* entity_b, bool check_self) {
+// Since all entities are assumed to be Rectangle-s, this is a simple way to check for collisions
+bool entity_is_colliding(Entity* entity_a, Entity* entity_b, Vector2* collision_point,
+                         bool check_self) {
     if (check_self && entity_a == entity_b) {
         return false;
     }
 
-    return CheckCollisionRecs(entity_a->rect, entity_b->rect);
+    if (CheckCollisionRecs(entity_a->rect, entity_b->rect)) {
+        Rectangle collision_rect = GetCollisionRec(entity_a->rect, entity_b->rect);
+        if (collision_point != NULL) {
+            *collision_point = rect_get_centered_position(&collision_rect);
+        }
+
+        return true;
+    }
+
+    return false;
 }
