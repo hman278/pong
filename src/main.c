@@ -74,8 +74,8 @@ void init() {
                                       &g_ball.base, &g_wall_top, &g_wall_bottom};
     memcpy(g_entities, entities, sizeof(g_entities));
 
-    g_player_racket_a.base.speed = PLAYER_DEFAULT_SPEED;
-    g_player_racket_b.base.speed = PLAYER_DEFAULT_SPEED;
+    g_player_racket_a.base.speed = PLAYER_RACKET_DEFAULT_SPEED;
+    g_player_racket_b.base.speed = PLAYER_RACKET_DEFAULT_SPEED;
     g_ball.base.speed = BALL_DEFAULT_SPEED;
 
     g_player_racket_a.base.tag = g_player_racket_b.base.tag = PLAYER;
@@ -103,7 +103,8 @@ void update() {
         Entity* collider_entity = g_entities[i];
         Vector2 collision_point;
         if (entity_is_colliding(&g_ball.base, collider_entity, &collision_point, true)) {
-            g_ball.base.move_dir = ball_calculate_bounce_direction(&g_ball.base, collider_entity);
+            g_ball.base.move_dir =
+                ball_calculate_bounce_direction(&g_ball.base, collider_entity, &collision_point);
             break;
         }
     }

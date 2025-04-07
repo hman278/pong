@@ -6,6 +6,7 @@
 
 // May need to add tags, depending on how far the game goes
 typedef enum {
+    NONE,
     PLAYER,
 } EntityTag;
 
